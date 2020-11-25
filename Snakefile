@@ -5,21 +5,27 @@ import json
 import os
 import pandas as pd
 
-IDS, = glob_wildcards("transcripts/{id}.fasta")
-ERR_df = pd.read_csv('PRJEB6609_metaT_ERR.list')
-EG_df = pd.read_csv('PRJEB4352_metaG_ERR.list')
+configfile: "config.yaml"
+
+# Load general variables and tables (ERR sample lists etc.) 
+T_ERR_df = pd.read_csv(config['metaT_ERR'])
+G_ERR_df = pd.read_csv(config['metaG_ERR'])
 metaT_dir = 'PRJEB6609'
 metaG_dir = 'PRJEB4352'
-ERR_list = list(ERR_df.run_accession)
-GERR_list= list(EG_df.run_accession)
-#ERR_list=ERR_list[300:]
-trimmed_fasta_dir = '/vortexfs1/omics/alexander/data/TARA/PRJEB4352-snakmake-output/trimmed/PRJEB6609'
-G_trimmed_fasta_dir = '/vortexfs1/omics/alexander/data/TARA/PRJEB4352-snakmake-output/trimmed/PRJEB4352'
+T_ERR_list = list(T_ERR_df.run_accession)
+G_ERR_list= list(G_ERR_df.run_accession)
+
+T_trimmed_fasta_dir = config['metaT_dir']
+G_trimmed_fasta_dir = config['metaG_dir']
+
+
+IDS, = glob_wildcards("transcripts/{id}.fasta")
+
 rule all:
     input: 
         directory(expand('transcripts/{id}{ext}', id=IDS, ext=['.index'])),  
-        expand(os.path.join('salmon', metaG_dir, '{id}', '{err}', 'quant.sf'), id=IDS, err=GERR_list), 
-        expand(os.path.join('salmon', metaT_dir, '{id}', '{gerr}', 'quant.sf'), id=IDS, gerr=ERR_list), 
+        expand(os.path.join('salmon', metaG_dir, '{id}', '{gerr}', 'quant.sf'), id=IDS, gerr=G_ERR_list), 
+        expand(os.path.join('salmon', metaT_dir, '{id}', '{terr}', 'quant.sf'), id=IDS, terr=T_ERR_list), 
         expand(os.path.join('salmon', metaG_dir, '{id}'+ '.merged.tpm'), id = IDS), 
         expand(os.path.join('salmon', metaT_dir, '{id}' + '.merged.tpm'), id = IDS),
 #        expand(os.path.join('salmon', metaT_dir, '{id}' + '.mapping.stats.csv'), id = IDS), 
@@ -35,9 +41,9 @@ rule salmon_index:
         salmon index -t {input} -i {output}
         '''
 rule salmon_quant:
-    input: index = directory('transcripts/{id}.index'), r1 = os.path.join(trimmed_fasta_dir, '{err}'+'_1.trimmed.fastq.gz'), r2 = os.path.join(trimmed_fasta_dir, '{err}'+'_2.trimmed.fastq.gz')
-    output: os.path.join('salmon', metaT_dir, '{id}','{err}', 'quant.sf')
-    params: outdir = os.path.join('salmon', metaT_dir , '{id}','{err}')
+    input: index = directory('transcripts/{id}.index'), r1 = os.path.join(T_trimmed_fasta_dir, '{terr}'+'_1.trimmed.fastq.gz'), r2 = os.path.join(T_trimmed_fasta_dir, '{terr}'+'_2.trimmed.fastq.gz')
+    output: os.path.join('salmon', metaT_dir, '{id}','{terr}', 'quant.sf')
+    params: outdir = os.path.join('salmon', metaT_dir , '{id}','{terr}')
     conda: 'envs/salmon.yaml'
     shell:
         '''
@@ -58,7 +64,7 @@ rule salmon_quantG:
         '''
 
 rule salmon_merge:
-    input: expand(os.path.join('salmon', metaT_dir, '{id}','{err}', 'quant.sf'), id = IDS, err=ERR_list)
+    input: expand(os.path.join('salmon', metaT_dir, '{id}','{err}', 'quant.sf'), id = IDS, err=T_ERR_list)
     output: tpm = os.path.join('salmon', metaT_dir, '{id}'+'.merged.tpm'), numreads = os.path.join('salmon', metaT_dir, '{id}'+'.merged.numreads')
     params: indir = os.path.join('salmon', metaT_dir, '{id}', 'ERR*')
     conda: 'envs/salmon.yaml'
@@ -70,7 +76,7 @@ rule salmon_merge:
         '''
 
 rule salmon_mergeG:
-    input: expand(os.path.join('salmon', metaG_dir, '{id}','{gerr}', 'quant.sf'), id = IDS, gerr=GERR_list)
+    input: expand(os.path.join('salmon', metaG_dir, '{id}','{gerr}', 'quant.sf'), id = IDS, gerr=G_ERR_list)
     output: tpm = os.path.join('salmon', metaG_dir, '{id}'+'.merged.tpm'), numreads = os.path.join('salmon', metaG_dir, '{id}'+'.merged.numreads')
     params: indir = os.path.join('salmon', metaG_dir, '{id}', 'ERR*')
     conda: 'envs/salmon.yaml'
