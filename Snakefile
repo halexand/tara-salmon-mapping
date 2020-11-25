@@ -14,11 +14,11 @@ metaT_dir = 'PRJEB6609'
 metaG_dir = 'PRJEB4352'
 T_ERR_list = list(T_ERR_df.run_accession)
 G_ERR_list= list(G_ERR_df.run_accession)
-
+# Directory for the ERR trimmed data
 T_trimmed_fasta_dir = config['metaT_dir']
 G_trimmed_fasta_dir = config['metaG_dir']
 
-
+# Get all the fasta ids in the transcripts folder
 IDS, = glob_wildcards("transcripts/{id}.fasta")
 
 rule all:
@@ -31,7 +31,6 @@ rule all:
 #        expand(os.path.join('salmon', metaT_dir, '{id}' + '.mapping.stats.csv'), id = IDS), 
 #        expand(os.path.join('salmon', metaG_dir, '{id}' + '.mapping.stats.csv'), id = IDS)
 
-localrules: summarize_mappingG, summarize_mapping
 rule salmon_index:
     input: 'transcripts/{id}.fasta', 
     output: directory('transcripts/{id}.index')
