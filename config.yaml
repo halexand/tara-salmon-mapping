@@ -1,0 +1,4 @@
+metaT_dir: /vortexfs1/omics/alexander/data/TARA/PRJEB4352-snakmake-output/trimmed/PRJEB6609
+metaG_dir: /vortexfs1/omics/alexander/data/TARA/PRJEB4352-snakmake-output/trimmed/PRJEB4352
+metaT_ERR: input/PRJEB6609_metaT_ERR.list
+metaG_ERR: input/PRJEB4352_metaG_ERR.list
